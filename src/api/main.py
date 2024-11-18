@@ -8,6 +8,8 @@ from src.api.extra.is_mutant import is_mutant
 
 db = create_db()
 
+app = Flask(__name__)
+
 @app.route('/mutant', methods=['POST'])
 def mutant():
     data = request.get_json()
@@ -42,3 +44,6 @@ def stats():
         "count_human_dna": humans,
         "ratio": ratio
     })
+    
+if __name__ == '__main__':
+    app.run(debug = True)
