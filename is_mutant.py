@@ -6,28 +6,10 @@ from dotenv import load_dotenv
 from flask import Flask, request,render_template, redirect, url_for
 import sqlite3
 
-from src.api.database.db import get_connection
-from src.api.extra.commons import parse_csv
-from src.api.extra.constants import data_rules
-from src.api.extra.utils import create_custom_logger
-from src.api.extra.buckup import obtain_backup_data, save_backup_to_avro
-from src.api.extra.restore import load_backup_from_avro, restore_table_with_data
+from src.api.database.db import create_db
 
 
-from flask_sqlalchemy import SQLAlchemy
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dna_records.db'
-db = SQLAlchemy(app)
-
-# Database Model
-class DNARecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sequence = db.Column(db.String, unique=True, nullable=False)
-    is_mutant = db.Column(db.Boolean, nullable=False)
-
-# Create the database
-with app.app_context():
-    db.create_all()
+db = create_db()
 
 @app.route('/mutant', methods=['POST'])
 def mutant():
