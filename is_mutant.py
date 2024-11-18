@@ -3,7 +3,7 @@ from typing import Union
 from os.path import join, dirname, realpath
 import pandas as pd
 from dotenv import load_dotenv
-from flask import Flask, request,render_template, redirect, url_for
+from flask import Flask, request, jsonify
 import sqlite3
 
 from src.api.database.db import create_db
