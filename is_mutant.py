@@ -1,3 +1,72 @@
+import os, psycopg2
+from typing import Union
+from os.path import join, dirname, realpath
+import pandas as pd
+from dotenv import load_dotenv
+from flask import Flask, request,render_template, redirect, url_for
+import sqlite3
+
+from src.api.database.db import get_connection
+from src.api.extra.commons import parse_csv
+from src.api.extra.constants import data_rules
+from src.api.extra.utils import create_custom_logger
+from src.api.extra.buckup import obtain_backup_data, save_backup_to_avro
+from src.api.extra.restore import load_backup_from_avro, restore_table_with_data
+
+
+from flask_sqlalchemy import SQLAlchemy
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dna_records.db'
+db = SQLAlchemy(app)
+
+# Database Model
+class DNARecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sequence = db.Column(db.String, unique=True, nullable=False)
+    is_mutant = db.Column(db.Boolean, nullable=False)
+
+# Create the database
+with app.app_context():
+    db.create_all()
+
+@app.route('/mutant', methods=['POST'])
+def mutant():
+    data = request.get_json()
+    dna = data.get('dna')
+
+    if not dna or not all(isinstance(row, str) for row in dna):
+        return jsonify({"error": "Invalid DNA format"}), 400
+
+    dna_sequence = ','.join(dna)
+    existing_record = DNARecord.query.filter_by(sequence=dna_sequence).first()
+
+    if existing_record:
+        result = existing_record.is_mutant
+    else:
+        result = is_mutant(dna)
+        new_record = DNARecord(sequence=dna_sequence, is_mutant=result)
+        db.session.add(new_record)
+        db.session.commit()
+
+    if result:
+        return jsonify({"message": "Mutant detected!"}), 200
+    else:
+        return jsonify({"message": "Human detected!"}), 403
+
+@app.route('/stats', methods=['GET'])
+def stats():
+    mutants = DNARecord.query.filter_by(is_mutant=True).count()
+    humans = DNARecord.query.filter_by(is_mutant=False).count()
+    ratio = mutants / (mutants + humans) if (mutants + humans) > 0 else 0
+    return jsonify({
+        "count_mutant_dna": mutants,
+        "count_human_dna": humans,
+        "ratio": ratio
+    })
+
+
+
+
 # Non-mutant DNA matrix (should return False)
 non_mutant_dna = [
     "ATGCGA",
