@@ -7,9 +7,10 @@ from flask import Flask, request, jsonify
 import sqlite3
 
 from src.api.database.db import create_db
-
+from src.api.extra.is_mutant import is_mutant
 
 db = create_db()
+is_mutant = is_mutant()
 
 @app.route('/mutant', methods=['POST'])
 def mutant():
